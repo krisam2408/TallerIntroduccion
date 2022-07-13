@@ -54,8 +54,6 @@ public class PlayerBehaviour : MonoBehaviour
 
         HandleGravity();
 
-        Debug.Log($"Grounded: {m_controller.isGrounded}, Jumping: {m_isCurrentJumping}, ButtonJump: {m_isJumping}");
-
         m_controller.Move(m_appliedMovement * Time.deltaTime * m_movementFactor);
     }
     #endregion
