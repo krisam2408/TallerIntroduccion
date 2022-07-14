@@ -23,7 +23,6 @@ public class PlayerBehaviour : MonoBehaviour
     [SerializeField] private float m_rotationFactor;
     [SerializeField] private float m_jumpTime;
     [SerializeField] private float m_jumpHeight;
-    private float m_minGravity = -0.1f;
     private float m_initialJumpForce;
     private float m_jumpForce;
     private float m_fallForce;
@@ -54,9 +53,8 @@ public class PlayerBehaviour : MonoBehaviour
 
         HandleGravity();
 
-        Debug.Log($"Grounded: {m_controller.isGrounded}, Jumping: {m_isCurrentJumping}, ButtonJump: {m_isJumping}");
 
-        m_controller.Move(m_appliedMovement * Time.deltaTime * m_movementFactor);
+        m_controller.Move(m_movementFactor * Time.deltaTime * m_appliedMovement);
     }
     #endregion
 
@@ -82,49 +80,53 @@ public class PlayerBehaviour : MonoBehaviour
 
     private Quaternion SetTargetRotation(float xDirection)
     {
-        if(xDirection < 0)
+        if (xDirection < 0)
             return Quaternion.Euler(0f, 180f, 0f);
         return Quaternion.identity;
     }
 
     private void HandleGravity()
     {
-        if(m_controller.isGrounded && !m_isJumping)
+        m_animator.SetBool("IsJumping", m_isCurrentJumping);
+
+        if (m_controller.isGrounded && !m_isJumping)
         {
             m_isCurrentJumping = false;
-            AppliedMovementY = m_minGravity;
+            AppliedMovementY = Constants.MinGravity;
+            return;
         }
-        else if(m_isCurrentJumping && AppliedMovementY < 0.1f)
+        
+        if((m_isCurrentJumping && AppliedMovementY < 0.1f) || (!m_isCurrentJumping && !m_controller.isGrounded))
         {
+            // Velvet Interpolation
+
             float previousYSpeed = AppliedMovementY;
             float nextYSpeed = AppliedMovementY + (m_fallForce * Time.deltaTime);
             float avgYSpeed = (previousYSpeed + nextYSpeed) * 0.5f;
             AppliedMovementY = avgYSpeed;
+            return;
         }
-        else if(m_isJumping && m_controller.isGrounded)
+
+        if(m_isJumping && m_controller.isGrounded)
         {
             m_isCurrentJumping = true;
             float previousYSpeed = AppliedMovementY;
             float nextYSpeed = AppliedMovementY + m_initialJumpForce;
             float avgYSpeed = (previousYSpeed + nextYSpeed) * 0.5f;
             AppliedMovementY = avgYSpeed;
+            return;
         }
-        else if(m_isCurrentJumping)
+        
+        if(m_isCurrentJumping)
         {
             float previousYSpeed = AppliedMovementY;
             float nextYSpeed = AppliedMovementY + (m_jumpForce * Time.deltaTime);
             float avgYSpeed = (previousYSpeed + nextYSpeed) * 0.5f;
             AppliedMovementY = avgYSpeed;
-        }
-        else if(!m_isCurrentJumping && !m_controller.isGrounded)
-        {
-            float previousYSpeed = AppliedMovementY;
-            float nextYSpeed = AppliedMovementY + (m_fallForce * Time.deltaTime);
-            float avgYSpeed = (previousYSpeed + nextYSpeed) * 0.5f;
-            AppliedMovementY = avgYSpeed;
+            return;
         }
 
-        m_animator.SetBool("IsJumping", m_isCurrentJumping);
+        
     }
 
 }
